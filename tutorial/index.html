@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Generative AI Tutorial</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --border: #e8e8e8;
+    --accent: #1a1a1a;
+    --muted: #888;
+    --tag-bg: #f0f0f0;
+    --active-bg: #1a1a1a;
+    --active-fg: #ffffff;
+    --bullet: #1a1a1a;
+    --watch: #555;
+    --font: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--accent);
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    font-size: 15px;
+  }
+
+  /* ── Sidebar ── */
+  nav {
+    width: 240px;
+    min-width: 240px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+
+  .nav-header {
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-header h1 { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .nav-header p  { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .nav-group { padding: 12px 0 4px; }
+  .nav-group-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted);
+    padding: 0 20px 6px;
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 20px;
+    cursor: pointer;
+    border-radius: 0;
+    transition: background 0.12s;
+    border-left: 2px solid transparent;
+  }
+  .nav-item:hover { background: var(--tag-bg); }
+  .nav-item.active {
+    background: var(--active-bg);
+    color: var(--active-fg);
+    border-left-color: var(--active-bg);
+  }
+  .nav-item.active .nav-num { background: rgba(255,255,255,0.15); color: #fff; }
+  .nav-num {
+    font-size: 10px; font-weight: 700;
+    background: var(--tag-bg); color: var(--muted);
+    border-radius: 4px; padding: 1px 5px;
+    min-width: 26px; text-align: center;
+  }
+  .nav-label { font-size: 13px; font-weight: 500; }
+
+  /* ── Main ── */
+  main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 48px 56px;
+    scrollbar-width: thin;
+  }
+
+  .section { display: none; max-width: 700px; }
+  .section.active { display: block; }
+
+  .section-tag {
+    display: inline-block;
+    font-size: 11px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--muted);
+    background: var(--tag-bg); border-radius: 4px;
+    padding: 3px 8px; margin-bottom: 16px;
+  }
+
+  .section h2 {
+    font-size: 26px; font-weight: 700;
+    line-height: 1.2; margin-bottom: 8px;
+  }
+
+  .section .subtitle {
+    font-size: 15px; color: var(--muted);
+    margin-bottom: 32px; line-height: 1.6;
+  }
+
+  /* concept block */
+  .concept {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    margin-bottom: 28px;
+  }
+  .concept-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 10px;
+  }
+  .concept p { font-size: 14px; line-height: 1.7; color: #333; }
+
+  /* bullets */
+  .block { margin-bottom: 28px; }
+  .block-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 12px;
+  }
+  .points { list-style: none; }
+  .points li {
+    display: flex; gap: 10px;
+    font-size: 14px; line-height: 1.6;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .points li:last-child { border-bottom: none; }
+  .points li::before {
+    content: '→';
+    color: var(--muted); font-size: 12px;
+    margin-top: 3px; flex-shrink: 0;
+  }
+
+  .watch-list li::before { content: '●'; color: #bbb; font-size: 8px; margin-top: 6px; }
+
+  .file-badge {
+    display: inline-block;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px; background: var(--tag-bg);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 2px 8px; color: var(--muted); margin-bottom: 32px;
+  }
+
+  /* nav arrows */
+  .nav-footer {
+    display: flex; gap: 8px; margin-top: 40px;
+    border-top: 1px solid var(--border); padding-top: 24px;
+  }
+  .nav-btn {
+    flex: 1; padding: 10px;
+    border: 1px solid var(--border); border-radius: 6px;
+    background: var(--surface); cursor: pointer;
+    font-size: 13px; font-weight: 500;
+    transition: background 0.12s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .nav-btn:hover { background: var(--tag-bg); }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+
+  /* intro diagram */
+  .diagram {
+    display: flex; align-items: center; gap: 0;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px 24px; margin-bottom: 28px;
+    flex-wrap: wrap; gap: 8px;
+  }
+  .diagram-step {
+    background: var(--tag-bg); border-radius: 6px;
+    padding: 6px 12px; font-size: 12px; font-weight: 600;
+  }
+  .diagram-arrow { color: var(--muted); font-size: 14px; padding: 0 4px; }
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<nav>
+  <div class="nav-header">
+    <h1>Gen AI Tutorial</h1>
+    <p>Python · LangChain · LangGraph</p>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Start Here</div>
+    <div class="nav-item active" data-section="intro">
+      <span class="nav-num">00</span>
+      <span class="nav-label">Introduction</span>
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Foundations</div>
+    <div class="nav-item" data-section="s01"><span class="nav-num">01</span><span class="nav-label">Basic LLM Calls</span></div>
+    <div class="nav-item" data-section="s02"><span class="nav-num">02</span><span class="nav-label">Message Types</span></div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Prompting</div>
+    <div class="nav-item" data-section="s03"><span class="nav-num">03</span><span class="nav-label">Prompt Templates</span></div>
+    <div class="nav-item" data-section="s04"><span class="nav-num">04</span><span class="nav-label">Prompt Strategies</span></div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">LCEL</div>
+    <div class="nav-item" data-section="s05"><span class="nav-num">05</span><span class="nav-label">LCEL Basics</span></div>
+    <div class="nav-item" data-section="s06"><span class="nav-num">06</span><span class="nav-label">Runnable Primitives</span></div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Output</div>
+    <div class="nav-item" data-section="s07"><span class="nav-num">07</span><span class="nav-label">Output Parsers</span></div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">RAG Pipeline</div>
+    <div class="nav-item" data-section="s08"><span class="nav-num">08</span><span class="nav-label">Document Loaders</span></div>
+    <div class="nav-item" data-section="s09"><span class="nav-num">09</span><span class="nav-label">Text Splitters</span></div>
+    <div class="nav-item" data-section="s10"><span class="nav-num">10</span><span class="nav-label">Embeddings &amp; Stores</span></div>
+    <div class="nav-item" data-section="s11"><span class="nav-num">11</span><span class="nav-label">Retrievers</span></div>
+    <div class="nav-item" data-section="s12"><span class="nav-num">12</span><span class="nav-label">Basic RAG</span></div>
+    <div class="nav-item" data-section="s13"><span class="nav-num">13</span><span class="nav-label">Advanced RAG</span></div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Memory &amp; Tools</div>
+    <div class="nav-item" data-section="s14"><span class="nav-num">14</span><span class="nav-label">Memory</span></div>
+    <div class="nav-item" data-section="s15"><span class="nav-num">15</span><span class="nav-label">Tools</span></div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">LangGraph</div>
+    <div class="nav-item" data-section="s16"><span class="nav-num">16</span><span class="nav-label">Graph Basics</span></div>
+    <div class="nav-item" data-section="s17"><span class="nav-num">17</span><span class="nav-label">Conditional Routing</span></div>
+    <div class="nav-item" data-section="s18"><span class="nav-num">18</span><span class="nav-label">ReAct Agent</span></div>
+    <div class="nav-item" data-section="s19"><span class="nav-num">19</span><span class="nav-label">Advanced Patterns</span></div>
+  </div>
+</nav>
+
+<!-- ── Main ── -->
+<main>
+
+  <!-- 00 Introduction -->
+  <div class="section active" id="intro">
+    <div class="section-tag">Overview</div>
+    <h2>Generative AI with LangChain</h2>
+    <p class="subtitle">A hands-on guide — run each file, read what prints, move to the next.</p>
+
+    <div class="concept">
+      <div class="concept-label">What is an LLM?</div>
+      <p>A Large Language Model is a neural network trained on vast text. It predicts the most likely next token — but at scale this produces reasoning, summarisation, code, and more.</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">The full pipeline we'll build</div>
+      <div class="diagram">
+        <span class="diagram-step">Prompt</span>
+        <span class="diagram-arrow">→</span>
+        <span class="diagram-step">LLM</span>
+        <span class="diagram-arrow">→</span>
+        <span class="diagram-step">Parser</span>
+        <span class="diagram-arrow">→</span>
+        <span class="diagram-step">Tools</span>
+        <span class="diagram-arrow">→</span>
+        <span class="diagram-step">Memory</span>
+        <span class="diagram-arrow">→</span>
+        <span class="diagram-step">RAG</span>
+        <span class="diagram-arrow">→</span>
+        <span class="diagram-step">Agent</span>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Key tools in this tutorial</div>
+      <ul class="points">
+        <li><strong>LangChain</strong> — wires together prompts, models, parsers, and retrievers</li>
+        <li><strong>LCEL</strong> — LangChain Expression Language; compose with the <code>|</code> pipe operator</li>
+        <li><strong>LangGraph</strong> — builds stateful, looping, multi-agent workflows as a graph</li>
+        <li><strong>OpenAI</strong> — provides the underlying LLM (gpt-4o-mini) and embeddings</li>
+        <li><strong>FAISS / Chroma</strong> — vector databases for semantic search</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Before you start</div>
+      <ul class="points">
+        <li>Copy <code>.env.example</code> → <code>.env</code> and add your <code>OPENAI_API_KEY</code></li>
+        <li>Run <code>pip install -r requirements.txt</code></li>
+        <li>Run files in order — each builds on the last</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 01 -->
+  <div class="section" id="s01">
+    <div class="section-tag">Foundations</div>
+    <h2>Basic LLM Calls</h2>
+    <p class="subtitle">Your first conversation with a model.</p>
+    <div class="file-badge">01_basic_llm.py</div>
+
+    <div class="concept">
+      <div class="concept-label">Core idea</div>
+      <p><code>ChatOpenAI</code> is the model wrapper. You send it text, it returns an <code>AIMessage</code>. Three modes: <strong>invoke</strong> (one shot), <strong>stream</strong> (token by token), <strong>batch</strong> (many prompts at once).</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Key points</div>
+      <ul class="points">
+        <li><code>temperature=0</code> → deterministic. <code>temperature=1+</code> → creative</li>
+        <li><code>invoke()</code> blocks until the full response arrives</li>
+        <li><code>stream()</code> yields chunks — use for live UI updates</li>
+        <li><code>batch()</code> sends multiple prompts in parallel — faster than a loop</li>
+        <li>Response is an <code>AIMessage</code>; read text via <code>.content</code></li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Watch for in the code</div>
+      <ul class="points watch-list">
+        <li>How <code>stream()</code> uses <code>end=""</code> to print without newlines between chunks</li>
+        <li>The difference in output style between temperature 0 and 1.2</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 02 -->
+  <div class="section" id="s02">
+    <div class="section-tag">Foundations</div>
+    <h2>Message Types</h2>
+    <p class="subtitle">Chat models speak in roles, not raw strings.</p>
+    <div class="file-badge">02_messages.py</div>
+
+    <div class="concept">
+      <div class="concept-label">Core idea</div>
+      <p>Every chat model call is a list of messages, each with a role. The model reads the full list and decides what to say next. Getting roles right is the foundation of everything else.</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">The four roles</div>
+      <ul class="points">
+        <li><strong>SystemMessage</strong> — sets persona/rules. The model follows this silently</li>
+        <li><strong>HumanMessage</strong> — the user's turn</li>
+        <li><strong>AIMessage</strong> — a past model response; inject to give it "memory"</li>
+        <li><strong>ToolMessage</strong> — the result of a tool call, fed back to the model</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Watch for in the code</div>
+      <ul class="points watch-list">
+        <li>How injecting an <code>AIMessage</code> makes the model "remember" Alice's name</li>
+        <li><code>MessagesPlaceholder</code> — a slot in a template filled with a list at runtime</li>
+        <li>The <code>ToolMessage</code> pattern: model asks → tool runs → result injected → model responds</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 03 -->
+  <div class="section" id="s03">
+    <div class="section-tag">Prompting</div>
+    <h2>Prompt Templates</h2>
+    <p class="subtitle">Reusable prompts with variables.</p>
+    <div class="file-badge">03_prompt_templates.py</div>
+
+    <div class="concept">
+      <div class="concept-label">Core idea</div>
+      <p>Hard-coded prompts are brittle. Templates define the structure once with <code>{variables}</code> and fill them at runtime — making prompts composable and testable.</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Template types</div>
+      <ul class="points">
+        <li><strong>PromptTemplate</strong> — plain string with <code>{vars}</code></li>
+        <li><strong>ChatPromptTemplate</strong> — list of role-message pairs with <code>{vars}</code></li>
+        <li><strong>SystemMessagePromptTemplate</strong> — typed system message with variables</li>
+        <li><strong>HumanMessagePromptTemplate</strong> — typed human message with variables</li>
+        <li><strong>Partial templates</strong> — pre-fill some vars now, leave others for later</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Watch for in the code</div>
+      <ul class="points watch-list">
+        <li><code>base_template.partial(role="doctor")</code> locks one variable, leaves others open</li>
+        <li><code>from_template()</code> shorthand vs explicit constructor</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 04 -->
+  <div class="section" id="s04">
+    <div class="section-tag">Prompting</div>
+    <h2>Prompt Strategies</h2>
+    <p class="subtitle">How you ask matters as much as what you ask.</p>
+    <div class="file-badge">04_prompt_strategies.py</div>
+
+    <div class="concept">
+      <div class="concept-label">Core idea</div>
+      <p>The same model gives dramatically different answers depending on how the prompt is framed. These strategies are your toolkit for improving output quality.</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Six strategies — side by side</div>
+      <ul class="points">
+        <li><strong>Zero-shot</strong> — just a task description, no examples. Fast, less precise</li>
+        <li><strong>One-shot</strong> — one example teaches the output format</li>
+        <li><strong>Few-shot</strong> — multiple examples; the model generalises the pattern</li>
+        <li><strong>Few-shot chat</strong> — same idea but using Human/AI message pairs</li>
+        <li><strong>Chain-of-Thought</strong> — "Let's think step by step" forces reasoning before the answer</li>
+        <li><strong>Self-Consistency</strong> — run CoT 3× at high temperature; majority vote wins</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Watch for in the code</div>
+      <ul class="points watch-list">
+        <li>The bat-and-ball problem — classic CoT demo. Notice how reasoning improves accuracy</li>
+        <li><code>FewShotPromptTemplate</code> vs <code>FewShotChatMessagePromptTemplate</code> — same idea, different format</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 05 -->
+  <div class="section" id="s05">
+    <div class="section-tag">LCEL</div>
+    <h2>LCEL Basics</h2>
+    <p class="subtitle">Compose components with the pipe operator.</p>
+    <div class="file-badge">05_lcel_basics.py</div>
+
+    <div class="concept">
+      <div class="concept-label">Core idea</div>
+      <p>LCEL chains are built by piping Runnables together with <code>|</code>. Each component's output becomes the next one's input. The chain itself is also a Runnable — so it has <code>invoke</code>, <code>stream</code>, and <code>batch</code>.</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Key points</div>
+      <ul class="points">
+        <li>Standard chain: <code>prompt | llm | parser</code></li>
+        <li>Data flows left → right automatically</li>
+        <li><code>StrOutputParser</code> converts <code>AIMessage</code> → plain <code>str</code></li>
+        <li>Multi-step: reshape output with a lambda between steps</li>
+        <li><code>chain.get_graph().print_ascii()</code> visualises the pipeline</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Watch for in the code</div>
+      <ul class="points watch-list">
+        <li>The two-step chain — explain in English, then translate to French</li>
+        <li>The ASCII graph output — shows every node and edge</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 06 -->
+  <div class="section" id="s06">
+    <div class="section-tag">LCEL</div>
+    <h2>Runnable Primitives</h2>
+    <p class="subtitle">Advanced building blocks for complex data flows.</p>
+    <div class="file-badge">06_lcel_runnables.py</div>
+
+    <div class="concept">
+      <div class="concept-label">Core idea</div>
+      <p>Beyond the basic pipe chain, LCEL offers primitives for splitting, merging, routing, and transforming data — all composable with <code>|</code>.</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Five primitives</div>
+      <ul class="points">
+        <li><strong>RunnablePassthrough</strong> — pass input unchanged; useful to keep original data alongside LLM output</li>
+        <li><strong>RunnableParallel</strong> — run multiple chains on the same input simultaneously</li>
+        <li><strong>RunnableLambda</strong> — wrap any Python function as a chainable Runnable</li>
+        <li><strong>RunnableBranch</strong> — route to different chains based on a condition</li>
+        <li><strong>itemgetter</strong> — extract one key from a dict cleanly inside a chain</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Watch for in the code</div>
+      <ul class="points watch-list">
+        <li><code>RunnableParallel</code> pros/cons run at the same time — note both keys in the result dict</li>
+        <li><code>RunnableBranch</code> — the fallback (last arg) fires when no condition matches</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 07 -->
+  <div class="section" id="s07">
+    <div class="section-tag">Output</div>
+    <h2>Output Parsers</h2>
+    <p class="subtitle">Turn LLM text into typed Python objects.</p>
+    <div class="file-badge">07_output_parsers.py</div>
+
+    <div class="concept">
+      <div class="concept-label">Core idea</div>
+      <p>Raw LLM output is always a string. Parsers convert it into the type your application needs — and some parsers inject format instructions into the prompt automatically.</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Six parsers</div>
+      <ul class="points">
+        <li><strong>StrOutputParser</strong> — <code>AIMessage → str</code>. Use this 90% of the time</li>
+        <li><strong>CommaSeparatedListOutputParser</strong> — <code>str → list[str]</code></li>
+        <li><strong>JsonOutputParser</strong> — <code>str → dict</code>. Model must output valid JSON</li>
+        <li><strong>PydanticOutputParser</strong> — <code>str → validated Pydantic model</code>. Best for structured data</li>
+        <li><strong>DatetimeOutputParser</strong> — <code>str → datetime</code></li>
+        <li><strong>XMLOutputParser</strong> — <code>str → parsed XML dict</code></li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Watch for in the code</div>
+      <ul class="points watch-list">
+        <li><code>get_format_instructions()</code> — auto-injects the expected format into the prompt</li>
+        <li>Pydantic parser validates types — <code>year</code> is always an int, <code>rating</code> always a float</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 08 -->
+  <div class="section" id="s08">
+    <div class="section-tag">RAG Pipeline</div>
+    <h2>Document Loaders</h2>
+    <p class="subtitle">Get your data into LangChain.</p>
+    <div class="file-badge">08_document_loaders.py</div>
+
+    <div class="concept">
+      <div class="concept-label">Core idea</div>
+      <p>Every loader produces a list of <code>Document</code> objects. Each document has <code>page_content</code> (the text) and <code>metadata</code> (source, page number, etc.).</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Five loaders</div>
+      <ul class="points">
+        <li><strong>TextLoader</strong> — entire file as one Document</li>
+        <li><strong>PyPDFLoader</strong> — one Document per page; metadata includes page number</li>
+        <li><strong>CSVLoader</strong> — one Document per row; column values in content</li>
+        <li><strong>DirectoryLoader</strong> — all files matching a glob pattern in a folder</li>
+        <li><strong>WebBaseLoader</strong> — scrapes and parses a URL into one Document</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Watch for in the code</div>
+      <ul class="points watch-list">
+        <li>The <code>metadata</code> dict — it carries the source path and page number through the pipeline</li>
+        <li>PDF gives one doc per page; CSV gives one doc per row — shape differs by loader</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 09 -->
+  <div class="section" id="s09">
+    <div class="section-tag">RAG Pipeline</div>
+    <h2>Text Splitters</h2>
+    <p class="subtitle">Break large documents into embeddable chunks.</p>
+    <div class="file-badge">09_text_splitters.py</div>
+
+    <div class="concept">
+      <div class="concept-label">Core idea</div>
+      <p>LLMs have a context limit. Splitters cut documents into overlapping chunks so each fits within the limit. <code>chunk_overlap</code> ensures context isn't lost at boundaries.</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Five splitters</div>
+      <ul class="points">
+        <li><strong>CharacterTextSplitter</strong> — splits on one separator. Simple but rigid</li>
+        <li><strong>RecursiveCharacterTextSplitter</strong> — tries paragraph → line → word → char. <em>Use this by default</em></li>
+        <li><strong>TokenTextSplitter</strong> — counts tokens not chars; matches LLM limits exactly</li>
+        <li><strong>MarkdownHeaderTextSplitter</strong> — splits on <code>#</code> headings; keeps hierarchy in metadata</li>
+        <li><strong>HTMLHeaderTextSplitter</strong> — splits on <code>&lt;h1&gt;</code>/<code>&lt;h2&gt;</code> tags</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Watch for in the code</div>
+      <ul class="points watch-list">
+        <li>Markdown/HTML splitters put heading names in <code>metadata</code> — great for citations</li>
+        <li>Compare chunk counts between splitters on the same document</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 10 -->
+  <div class="section" id="s10">
+    <div class="section-tag">RAG Pipeline</div>
+    <h2>Embeddings &amp; Vector Stores</h2>
+    <p class="subtitle">Convert text to vectors; find similar text instantly.</p>
+    <div class="file-badge">10_embeddings_vectorstores.py</div>
+
+    <div class="concept">
+      <div class="concept-label">Core idea</div>
+      <p>An embedding is a list of numbers that encodes meaning. Texts about similar topics have vectors that are close together. A vector store indexes these vectors and retrieves the nearest ones to a query.</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Key concepts</div>
+      <ul class="points">
+        <li><strong>OpenAIEmbeddings</strong> — calls the OpenAI API to embed text (<code>text-embedding-3-small</code>)</li>
+        <li><strong>FAISS</strong> — Facebook's fast in-memory index. No server needed. Save/load to disk</li>
+        <li><strong>Chroma</strong> — persistent local vector store with a simple API</li>
+        <li><strong>similarity_search(query, k=3)</strong> — returns the k nearest documents</li>
+        <li><strong>Cosine similarity</strong> — the maths behind "how similar are two vectors"</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Watch for in the code</div>
+      <ul class="points watch-list">
+        <li>The manual cosine similarity section — see how scores differ for relevant vs irrelevant text</li>
+        <li><code>allow_dangerous_deserialization=True</code> is required to reload a FAISS index from disk</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 11 -->
+  <div class="section" id="s11">
+    <div class="section-tag">RAG Pipeline</div>
+    <h2>Retrievers</h2>
+    <p class="subtitle">Smarter ways to fetch relevant documents.</p>
+    <div class="file-badge">11_retrievers.py</div>
+
+    <div class="concept">
+      <div class="concept-label">Core idea</div>
+      <p>A retriever wraps a vector store with a clean <code>.invoke(query)</code> interface. Different strategies trade off between speed, diversity, and relevance.</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Five retrievers</div>
+      <ul class="points">
+        <li><strong>Basic</strong> — top-k by similarity. Fast, straightforward</li>
+        <li><strong>MMR</strong> — Maximum Marginal Relevance. Penalises redundant results → more diverse</li>
+        <li><strong>MultiQueryRetriever</strong> — LLM generates 3 query variants; results merged. Better recall</li>
+        <li><strong>ContextualCompression</strong> — LLM strips irrelevant sentences from each chunk before returning</li>
+        <li><strong>SelfQueryRetriever</strong> — LLM translates natural language into metadata filters automatically</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Watch for in the code</div>
+      <ul class="points watch-list">
+        <li>MMR's <code>lambda_mult</code> — 0 = max diversity, 1 = max relevance</li>
+        <li>SelfQuery turns "page 2" in English into an actual metadata filter</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 12 -->
+  <div class="section" id="s12">
+    <div class="section-tag">RAG Pipeline</div>
+    <h2>Basic RAG</h2>
+    <p class="subtitle">End-to-end retrieval-augmented generation.</p>
+    <div class="file-badge">12_rag_basic.py</div>
+
+    <div class="concept">
+      <div class="concept-label">Core idea</div>
+      <p>Instead of relying on training data, the model reads real documents at query time. This reduces hallucination and keeps answers current. All the pieces from 08–11 combine here.</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">The pipeline — step by step</div>
+      <ul class="points">
+        <li><strong>Load</strong> — PyPDFLoader reads <code>laptop_policy.pdf</code></li>
+        <li><strong>Split</strong> — RecursiveCharacterTextSplitter chunks it</li>
+        <li><strong>Embed + Store</strong> — FAISS indexes all chunks</li>
+        <li><strong>Retrieve</strong> — top-4 chunks fetched per question</li>
+        <li><strong>Prompt</strong> — chunks injected as context; LLM answers from context only</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Watch for in the code</div>
+      <ul class="points watch-list">
+        <li><code>RunnableParallel</code> fetches context and passes the question through simultaneously</li>
+        <li>The system prompt says "ONLY the context" — this prevents hallucination</li>
+        <li>Source chunk display at the end — shows exactly which pages were used</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 13 -->
+  <div class="section" id="s13">
+    <div class="section-tag">RAG Pipeline</div>
+    <h2>Advanced RAG</h2>
+    <p class="subtitle">Conversational, multi-query, and reranked retrieval.</p>
+    <div class="file-badge">13_rag_advanced.py</div>
+
+    <div class="concept">
+      <div class="concept-label">Core idea</div>
+      <p>Basic RAG fails on follow-up questions and misses relevant chunks with poor phrasing. These three patterns fix those problems.</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Three patterns</div>
+      <ul class="points">
+        <li><strong>Conversational RAG</strong> — condense "What about that?" → standalone question using history, then retrieve</li>
+        <li><strong>Multi-query RAG</strong> — generate 3 phrasings of the question, merge all results, deduplicate</li>
+        <li><strong>Reranking</strong> — retrieve 8 chunks, score each with an LLM, keep the top 3</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Watch for in the code</div>
+      <ul class="points watch-list">
+        <li>The condensation step — see how "Do they need a VPN?" becomes a full standalone question</li>
+        <li>Reranking adds LLM calls per chunk — slower but more precise</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 14 -->
+  <div class="section" id="s14">
+    <div class="section-tag">Memory &amp; Tools</div>
+    <h2>Conversation Memory</h2>
+    <p class="subtitle">Give the model a sense of history.</p>
+    <div class="file-badge">14_memory.py</div>
+
+    <div class="concept">
+      <div class="concept-label">Core idea</div>
+      <p>LLMs are stateless — every call starts fresh. Memory is just storing past messages and injecting them into the next prompt. The challenge is controlling how much history to keep.</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Three patterns</div>
+      <ul class="points">
+        <li><strong>Full history</strong> — keep every message. Simple, but grows without limit</li>
+        <li><strong>Sliding window</strong> — keep only the last N messages. Caps token usage</li>
+        <li><strong>Summarisation</strong> — compress old messages into a running summary. Best of both</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Watch for in the code</div>
+      <ul class="points watch-list">
+        <li><code>RunnableWithMessageHistory</code> — auto-loads and saves history per <code>session_id</code></li>
+        <li><code>trim_messages(strategy="last")</code> — keeps the most recent N, always preserving SystemMessage</li>
+        <li>Summarisation class: when messages exceed window, old ones collapse into one summary message</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 15 -->
+  <div class="section" id="s15">
+    <div class="section-tag">Memory &amp; Tools</div>
+    <h2>Tools</h2>
+    <p class="subtitle">Let the model take actions.</p>
+    <div class="file-badge">15_tools.py</div>
+
+    <div class="concept">
+      <div class="concept-label">Core idea</div>
+      <p>Tools extend what an LLM can do. The model reads tool descriptions and decides whether — and how — to call them. You define the tools; the model decides when to use them.</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Four ways to define a tool</div>
+      <ul class="points">
+        <li><strong>@tool decorator</strong> — simplest. Docstring becomes the description the model reads</li>
+        <li><strong>StructuredTool</strong> — explicit name/description/function wiring</li>
+        <li><strong>Pydantic args schema</strong> — type-safe validated inputs with field descriptions</li>
+        <li><strong>BaseTool subclass</strong> — full control; good for complex or async tools</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Watch for in the code</div>
+      <ul class="points watch-list">
+        <li><code>llm.bind_tools(tools)</code> — tells the model what tools exist</li>
+        <li>The manual execution loop — model returns <code>tool_calls</code>; you run them; feed results back as <code>ToolMessage</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 16 -->
+  <div class="section" id="s16">
+    <div class="section-tag">LangGraph</div>
+    <h2>Graph Basics</h2>
+    <p class="subtitle">Stateful workflows as nodes and edges.</p>
+    <div class="file-badge">16_langgraph_basics.py</div>
+
+    <div class="concept">
+      <div class="concept-label">Core idea</div>
+      <p>LangGraph models workflows as a directed graph. Each node is a Python function that reads from shared state and returns updates. Edges define which node runs next.</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Core concepts</div>
+      <ul class="points">
+        <li><strong>StateGraph</strong> — the builder. Takes a <code>TypedDict</code> as the state schema</li>
+        <li><strong>Node</strong> — a function <code>(state) → dict</code>. Returns only the keys it changes</li>
+        <li><strong>Edge</strong> — <code>add_edge(A, B)</code> means: after A, always go to B</li>
+        <li><strong>START / END</strong> — built-in entry and exit points</li>
+        <li><strong>compile()</strong> — validates the graph and returns a runnable app</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Watch for in the code</div>
+      <ul class="points watch-list">
+        <li>Nodes return partial dicts — only update the keys they touch</li>
+        <li><code>print_ascii()</code> — visualise the graph structure in the terminal</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 17 -->
+  <div class="section" id="s17">
+    <div class="section-tag">LangGraph</div>
+    <h2>Conditional Routing</h2>
+    <p class="subtitle">Branches, parallel fans, and retry loops.</p>
+    <div class="file-badge">17_langgraph_conditional.py</div>
+
+    <div class="concept">
+      <div class="concept-label">Core idea</div>
+      <p>Real workflows branch. A router function inspects state and returns the name of the next node. This unlocks if/else logic, parallel execution, and loops inside a graph.</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Three patterns</div>
+      <ul class="points">
+        <li><strong>Conditional edge</strong> — router returns a node name based on state. Technical vs general answers</li>
+        <li><strong>Parallel branches</strong> — add two edges from <code>START</code> to run nodes simultaneously; merge at a join node</li>
+        <li><strong>Retry loop</strong> — conditional edge returns back to a previous node until score threshold is met</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Watch for in the code</div>
+      <ul class="points watch-list">
+        <li><code>add_conditional_edges(node, router_fn)</code> — the router returns a node name, not a boolean</li>
+        <li>Two <code>add_edge(START, X)</code> calls — LangGraph runs them in parallel automatically</li>
+        <li>Loop: <code>should_continue</code> returns either <code>"generate"</code> or <code>END</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 18 -->
+  <div class="section" id="s18">
+    <div class="section-tag">LangGraph</div>
+    <h2>ReAct Agent</h2>
+    <p class="subtitle">The foundational agentic loop.</p>
+    <div class="file-badge">18_langgraph_agent.py</div>
+
+    <div class="concept">
+      <div class="concept-label">Core idea</div>
+      <p>ReAct = Reason + Act. The agent loops: the LLM thinks → calls a tool → reads the result → thinks again → until it has a final answer. LangGraph makes this loop explicit and inspectable.</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">The loop</div>
+      <ul class="points">
+        <li><strong>agent node</strong> — LLM with tools bound; returns either tool_calls or a final answer</li>
+        <li><strong>tool_node</strong> — executes every tool call in the last message; appends ToolMessages</li>
+        <li><strong>router</strong> — if last message has tool_calls → tool_node; else → END</li>
+        <li><strong>add_messages reducer</strong> — appends new messages instead of replacing the list</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Watch for in the code</div>
+      <ul class="points watch-list">
+        <li>The <code>Annotated[list, add_messages]</code> state field — this is what enables the message loop</li>
+        <li>The multi-step question — the agent calls list_length, then feeds that result into calculate</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 19 -->
+  <div class="section" id="s19">
+    <div class="section-tag">LangGraph</div>
+    <h2>Advanced Patterns</h2>
+    <p class="subtitle">Human-in-the-loop, supervisor agents, error recovery.</p>
+    <div class="file-badge">19_langgraph_advanced.py</div>
+
+    <div class="concept">
+      <div class="concept-label">Core idea</div>
+      <p>Production agents need to pause for humans, delegate to specialists, and recover from failures gracefully. These three patterns cover the most common real-world requirements.</p>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Three patterns</div>
+      <ul class="points">
+        <li><strong>Human-in-the-loop</strong> — <code>interrupt()</code> suspends the graph; resume after <code>update_state()</code> with the human's decision</li>
+        <li><strong>Supervisor</strong> — a coordinator LLM routes each task to the best specialist (writer / analyst / coder)</li>
+        <li><strong>Error recovery</strong> — wrap risky nodes in try/except; store error in state; route to a fallback handler</li>
+      </ul>
+    </div>
+
+    <div class="block">
+      <div class="block-label">Watch for in the code</div>
+      <ul class="points watch-list">
+        <li><code>MemorySaver</code> is required for <code>interrupt()</code> — it checkpoints state between invocations</li>
+        <li>Supervisor pattern: <code>add_conditional_edges</code> uses <code>lambda s: s["next_agent"]</code> as the router</li>
+        <li>Error recovery: conditional edge checks <code>state.get("error")</code> — empty string is falsy</li>
+      </ul>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  const items = document.querySelectorAll('.nav-item');
+  const sections = document.querySelectorAll('.section');
+
+  function activate(id) {
+    items.forEach(i => i.classList.toggle('active', i.dataset.section === id));
+    sections.forEach(s => s.classList.toggle('active', s.id === id));
+    document.querySelector('main').scrollTo(0, 0);
+  }
+
+  items.forEach(item => {
+    item.addEventListener('click', () => activate(item.dataset.section));
+  });
+
+  // Keyboard navigation
+  const order = Array.from(items).map(i => i.dataset.section);
+  document.addEventListener('keydown', e => {
+    const current = order.indexOf(document.querySelector('.nav-item.active').dataset.section);
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      if (current < order.length - 1) activate(order[current + 1]);
+    }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      if (current > 0) activate(order[current - 1]);
+    }
+  });
+</script>
+
+</body>
+</html>
