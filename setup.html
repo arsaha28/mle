@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Local Setup Guide — Gen AI Tutorial</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --border: #e8e8e8;
+    --accent: #1a1a1a;
+    --muted: #888;
+    --tag-bg: #f0f0f0;
+    --green: #16a34a;
+    --green-bg: #f0fdf4;
+    --green-border: #bbf7d0;
+    --yellow: #92400e;
+    --yellow-bg: #fffbeb;
+    --yellow-border: #fde68a;
+    --code-bg: #1a1a1a;
+    --code-fg: #e8e8e8;
+    --font: 'Inter', system-ui, -apple-system, sans-serif;
+    --mono: 'SF Mono', 'Fira Code', monospace;
+  }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--accent);
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  .page {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 56px 32px 80px;
+  }
+
+  /* ── Header ── */
+  .page-tag {
+    display: inline-block;
+    font-size: 11px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted);
+    background: var(--tag-bg); border-radius: 4px;
+    padding: 3px 8px; margin-bottom: 16px;
+  }
+  h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+  .subtitle { font-size: 16px; color: var(--muted); margin-bottom: 48px; }
+
+  /* ── Steps ── */
+  .step {
+    display: flex; gap: 24px;
+    margin-bottom: 40px;
+  }
+  .step-num {
+    flex-shrink: 0;
+    width: 32px; height: 32px;
+    background: var(--accent); color: #fff;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+    margin-top: 2px;
+  }
+  .step-body { flex: 1; }
+  .step-body h2 {
+    font-size: 18px; font-weight: 700; margin-bottom: 6px;
+  }
+  .step-body p { color: #444; font-size: 14px; margin-bottom: 12px; }
+
+  /* ── Code blocks ── */
+  .code-block {
+    background: var(--code-bg);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .code-block pre {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--code-fg);
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .code-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: #666;
+    margin-bottom: 8px;
+  }
+
+  /* ── Inline code ── */
+  code {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--tag-bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+
+  /* ── Callouts ── */
+  .callout {
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 12px;
+    font-size: 14px;
+  }
+  .callout.tip {
+    background: var(--green-bg);
+    border: 1px solid var(--green-border);
+    color: #166534;
+  }
+  .callout.warn {
+    background: var(--yellow-bg);
+    border: 1px solid var(--yellow-border);
+    color: var(--yellow);
+  }
+  .callout strong { font-weight: 700; }
+
+  /* ── Requirement pills ── */
+  .req-grid {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    margin-bottom: 12px;
+  }
+  .req-pill {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+  .req-pill .icon { font-size: 18px; }
+  .req-pill .name { font-weight: 600; }
+  .req-pill .ver  { color: var(--muted); font-size: 12px; }
+
+  /* ── Package list ── */
+  .pkg-list {
+    list-style: none;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 6px; margin-bottom: 12px;
+  }
+  .pkg-list li {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--tag-bg);
+    border-radius: 4px;
+    padding: 4px 10px;
+    color: #333;
+  }
+
+  /* ── Divider ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+
+  /* ── Final checklist ── */
+  .checklist { list-style: none; }
+  .checklist li {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 14px; padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .check-box {
+    width: 18px; height: 18px; flex-shrink: 0;
+    border: 2px solid var(--border);
+    border-radius: 4px; margin-top: 1px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; user-select: none;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .check-box.done { background: var(--accent); border-color: var(--accent); color: #fff; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="page-tag">Setup Guide</div>
+  <h1>Run the Tutorial Locally</h1>
+  <p class="subtitle">Everything you need to get from zero to running your first file.</p>
+
+  <!-- ── Prerequisites ── -->
+  <div class="step">
+    <div class="step-num">0</div>
+    <div class="step-body">
+      <h2>What you need before starting</h2>
+      <p>Make sure these are installed on your machine.</p>
+      <div class="req-grid">
+        <div class="req-pill"><span class="icon">🐍</span><span class="name">Python</span><span class="ver">3.11 or higher</span></div>
+        <div class="req-pill"><span class="icon">📦</span><span class="name">pip</span><span class="ver">comes with Python</span></div>
+        <div class="req-pill"><span class="icon">🖥️</span><span class="name">VS Code</span><span class="ver">any recent version</span></div>
+        <div class="req-pill"><span class="icon">🔑</span><span class="name">OpenAI API key</span><span class="ver">platform.openai.com</span></div>
+        <div class="req-pill"><span class="icon">🌿</span><span class="name">Git</span><span class="ver">to clone the repo</span></div>
+      </div>
+      <div class="callout tip">
+        <strong>Check your Python version</strong> — open a terminal and run <code>python3 --version</code>.
+        You need <strong>3.11+</strong>. If you have an older version, download the latest from python.org.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Step 1: Clone ── -->
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h2>Clone the repository</h2>
+      <p>Download the code to your local machine.</p>
+      <div class="code-block">
+        <div class="code-label">Terminal</div>
+        <pre>git clone https://github.com/arsaha28/mle.git
+cd mle</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Step 2: Virtual env ── -->
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h2>Create a virtual environment</h2>
+      <p>A virtual environment keeps this project's packages isolated from the rest of your system. Always do this — it prevents version conflicts between projects.</p>
+      <div class="code-block">
+        <div class="code-label">macOS / Linux</div>
+        <pre>python3 -m venv venv
+source venv/bin/activate</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-label">Windows (Command Prompt)</div>
+        <pre>python -m venv venv
+venv\Scripts\activate</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-label">Windows (PowerShell)</div>
+        <pre>python -m venv venv
+venv\Scripts\Activate.ps1</pre>
+      </div>
+      <div class="callout tip">
+        <strong>You'll know it worked</strong> when your terminal prompt shows <code>(venv)</code> at the start.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Step 3: Install packages ── -->
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h2>Install dependencies</h2>
+      <p>One command installs everything the tutorial needs.</p>
+      <div class="code-block">
+        <div class="code-label">Terminal (inside venv)</div>
+        <pre>pip install -r requirements.txt</pre>
+      </div>
+      <p>This installs the following packages:</p>
+      <ul class="pkg-list">
+        <li>langchain &gt;= 0.3.0</li>
+        <li>langchain-openai &gt;= 0.2.0</li>
+        <li>langchain-community &gt;= 0.3.0</li>
+        <li>langchain-text-splitters &gt;= 0.3.0</li>
+        <li>langgraph &gt;= 0.2.0</li>
+        <li>faiss-cpu &gt;= 1.8.0</li>
+        <li>chromadb &gt;= 0.5.0</li>
+        <li>pypdf &gt;= 4.0.0</li>
+        <li>pydantic &gt;= 2.0.0</li>
+        <li>python-dotenv &gt;= 1.0.0</li>
+        <li>tiktoken &gt;= 0.7.0</li>
+        <li>unstructured &gt;= 0.14.0</li>
+      </ul>
+      <div class="callout warn">
+        <strong>Slow install?</strong> <code>chromadb</code> and <code>unstructured</code> pull in large dependencies.
+        This is normal — it can take 2–3 minutes on first install.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Step 4: API Key ── -->
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <h2>Set up your OpenAI API key</h2>
+      <p>The tutorial calls the OpenAI API (gpt-4o-mini and text-embedding-3-small). You need a key to authenticate.</p>
+
+      <p><strong>Step 4a</strong> — Copy the example env file:</p>
+      <div class="code-block">
+        <div class="code-label">macOS / Linux</div>
+        <pre>cp .env.example .env</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-label">Windows</div>
+        <pre>copy .env.example .env</pre>
+      </div>
+
+      <p><strong>Step 4b</strong> — Open <code>.env</code> in VS Code and replace the placeholder:</p>
+      <div class="code-block">
+        <div class="code-label">.env</div>
+        <pre>OPENAI_API_KEY=sk-...your-actual-key-here...</pre>
+      </div>
+
+      <div class="callout warn">
+        <strong>Never commit your .env file.</strong> It contains your secret key.
+        The <code>.gitignore</code> already excludes it — don't add it manually.
+      </div>
+      <div class="callout tip">
+        <strong>Get a key</strong> at <strong>platform.openai.com → API Keys → Create new secret key</strong>.
+        You'll need to add a small credit balance (~$5) to make API calls.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Step 5: VS Code ── -->
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <h2>Open in VS Code</h2>
+      <p>Open the project folder and point VS Code at the virtual environment you created.</p>
+      <div class="code-block">
+        <div class="code-label">Terminal</div>
+        <pre>code .</pre>
+      </div>
+      <p>Then select the Python interpreter:</p>
+      <ul class="pkg-list" style="grid-template-columns:1fr;">
+        <li>Press Cmd+Shift+P (Mac) or Ctrl+Shift+P (Windows)</li>
+        <li>Type: Python: Select Interpreter</li>
+        <li>Choose the one that shows ./venv/bin/python or .\venv\Scripts\python.exe</li>
+      </ul>
+      <div class="callout tip">
+        <strong>Recommended VS Code extensions:</strong>
+        <strong>Python</strong> (Microsoft) — syntax, linting, debugger &nbsp;|&nbsp;
+        <strong>Pylance</strong> — type checking and autocomplete.
+        Install both from the Extensions panel (Ctrl+Shift+X).
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Step 6: Run ── -->
+  <div class="step">
+    <div class="step-num">6</div>
+    <div class="step-body">
+      <h2>Run your first file</h2>
+      <p>Start with file 01 and work through them in order — each builds on the last.</p>
+      <div class="code-block">
+        <div class="code-label">Terminal (from the project root)</div>
+        <pre>python tutorial/01_basic_llm.py</pre>
+      </div>
+      <div class="callout tip">
+        <strong>Expected output:</strong> you'll see the model's response printed to the terminal.
+        If you see an <code>AuthenticationError</code>, double-check your API key in <code>.env</code>.
+      </div>
+    </div>
+  </div>
+
+  <hr />
+
+  <!-- ── Final checklist ── -->
+  <h2 style="font-size:18px; margin-bottom:16px;">Pre-flight checklist</h2>
+  <p style="font-size:14px; color:var(--muted); margin-bottom:16px;">Click each item to mark it done.</p>
+  <ul class="checklist" id="checklist">
+    <li><div class="check-box" onclick="toggle(this)"></div> Python 3.11+ installed (<code>python3 --version</code>)</li>
+    <li><div class="check-box" onclick="toggle(this)"></div> Repository cloned</li>
+    <li><div class="check-box" onclick="toggle(this)"></div> Virtual environment created and activated — prompt shows <code>(venv)</code></li>
+    <li><div class="check-box" onclick="toggle(this)"></div> Dependencies installed (<code>pip install -r requirements.txt</code>)</li>
+    <li><div class="check-box" onclick="toggle(this)"></div> <code>.env</code> file created with your OpenAI API key</li>
+    <li><div class="check-box" onclick="toggle(this)"></div> VS Code opened and Python interpreter set to the venv</li>
+    <li><div class="check-box" onclick="toggle(this)"></div> <code>01_basic_llm.py</code> runs without errors</li>
+  </ul>
+
+</div>
+
+<script>
+  function toggle(el) {
+    el.classList.toggle('done');
+    el.textContent = el.classList.contains('done') ? '✓' : '';
+  }
+</script>
+
+</body>
+</html>
