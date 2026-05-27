@@ -125,7 +125,7 @@ print("\n=== 3. MultiQueryRetriever (query expansion) ===")
 try:
     from langchain.retrievers.multi_query import MultiQueryRetriever
 except ImportError:
-    from langchain_community.retrievers import MultiQueryRetriever  # noqa: E402
+    from langchain_community.retrievers.multi_query import MultiQueryRetriever  # noqa: E402
 import logging  # noqa: E402
 
 # Enable logging to see the generated query variants in the output
