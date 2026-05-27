@@ -122,7 +122,10 @@ for doc in docs_retrieved:
 #
 # When to use: when your query is ambiguous or could be phrased many ways.
 print("\n=== 3. MultiQueryRetriever (query expansion) ===")
-from langchain.retrievers.multi_query import MultiQueryRetriever  # noqa: E402
+try:
+    from langchain.retrievers.multi_query import MultiQueryRetriever
+except ImportError:
+    from langchain_community.retrievers import MultiQueryRetriever  # noqa: E402
 import logging  # noqa: E402
 
 # Enable logging to see the generated query variants in the output
@@ -157,8 +160,12 @@ for doc in docs_retrieved[:3]:
 #
 # When to use: when chunk quality matters more than retrieval speed.
 print("\n=== 4. ContextualCompressionRetriever (extract relevant parts) ===")
-from langchain.retrievers.contextual_compression import ContextualCompressionRetriever  # noqa: E402
-from langchain.retrievers.document_compressors import LLMChainExtractor  # noqa: E402
+try:
+    from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
+    from langchain.retrievers.document_compressors import LLMChainExtractor
+except ImportError:
+    from langchain_community.retrievers.contextual_compression import ContextualCompressionRetriever  # noqa: E402
+    from langchain_community.retrievers.document_compressors import LLMChainExtractor  # noqa: E402
 
 # LLMChainExtractor reads each chunk and returns only the relevant sentences.
 compressor = LLMChainExtractor.from_llm(llm)
