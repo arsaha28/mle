@@ -77,7 +77,9 @@ show_docs(docs, "CSVLoader (row-by-row)")
 # ── 4. DirectoryLoader ───────────────────────────────────────────────────────────────
 from langchain_community.document_loaders import DirectoryLoader  # noqa: E402
 
-dir_loader = DirectoryLoader(DATA_DIR, glob="*.txt")
+# loader_cls=TextLoader avoids the default UnstructuredFileLoader which
+# requires libmagic and makes network calls.
+dir_loader = DirectoryLoader(DATA_DIR, glob="*.txt", loader_cls=TextLoader)
 docs = dir_loader.load()
 show_docs(docs, "DirectoryLoader (all .txt files)")
 # Useful for loading entire knowledge bases stored as files.
