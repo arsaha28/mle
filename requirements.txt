@@ -10,3 +10,4 @@ pydantic>=2.0.0
 python-dotenv>=1.0.0
 tiktoken>=0.7.0
 unstructured>=0.14.0
+reportlab>=4.0.0
