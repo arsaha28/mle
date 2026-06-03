@@ -22,9 +22,9 @@ This means you can swap one for another in a RAG chain without changing anything
 Retrievers covered:
   1. Basic VectorStoreRetriever      → simple top-k similarity search
   2. MMR Retriever                   → Maximum Marginal Relevance (diversity-aware)
-  3. MultiQueryRetriever             → generates multiple query variants, merges results
-  4. ContextualCompressionRetriever  → strips irrelevant parts from returned chunks
-  5. SelfQueryRetriever              → translates natural language filters into metadata queries
+  3. MultiQuery                      → generates multiple query variants, merges results
+  4. Contextual Compression          → strips irrelevant parts from returned chunks
+  5. Metadata Filtering              → translates natural language filters into metadata queries
 """
 
 import os
@@ -109,7 +109,7 @@ for doc in docs_retrieved:
 # of the topic rather than repeating the same point from different angles.
 
 
-# ── 3. MultiQueryRetriever ───────────────────────────────────────────────────────
+# ── 3. MultiQuery (query expansion) ──────────────────────────────────────────────
 # Problem: a single query phrasing might miss relevant chunks that use
 # different vocabulary. "remote work security" won't find a chunk that says
 # "off-site device protection" even if it's highly relevant.
@@ -117,76 +117,96 @@ for doc in docs_retrieved:
 # Solution: use the LLM to generate 3 alternative phrasings of your query,
 # run all of them, then merge and deduplicate the results.
 #
+# This is implemented here using core LangChain primitives (PromptTemplate + LLM)
+# so you can see exactly what happens under the hood — no opaque wrapper needed.
+#
 # Cost: 1 extra LLM call per retrieval (to generate the query variants).
 # Benefit: higher recall — more relevant chunks are found.
 #
 # When to use: when your query is ambiguous or could be phrased many ways.
-print("\n=== 3. MultiQueryRetriever (query expansion) ===")
-try:
-    from langchain.retrievers.multi_query import MultiQueryRetriever
-except ImportError:
-    from langchain_community.retrievers.multi_query import MultiQueryRetriever  # noqa: E402
-import logging  # noqa: E402
+print("\n=== 3. MultiQuery (query expansion) ===")
+from langchain_core.prompts import PromptTemplate  # noqa: E402
+from langchain_core.output_parsers import StrOutputParser  # noqa: E402
 
-# Enable logging to see the generated query variants in the output
-logging.getLogger("langchain.retrievers.multi_query").setLevel(logging.INFO)
-
-multi_retriever = MultiQueryRetriever.from_llm(
-    retriever=basic_retriever,  # underlying retriever to run each variant against
-    llm=llm,                    # LLM used to generate the query variants
+# Step 1: ask the LLM to rephrase the query 3 ways
+variant_prompt = PromptTemplate.from_template(
+    "Generate exactly 3 alternative phrasings of the following question to help "
+    "retrieve relevant documents. Output only the questions, one per line, no numbering.\n\n"
+    "Question: {question}"
 )
-docs_retrieved = multi_retriever.invoke(QUERY)
+variant_chain = variant_prompt | llm | StrOutputParser()
+
+variants_raw = variant_chain.invoke({"question": QUERY})
+variants = [v.strip() for v in variants_raw.strip().split("\n") if v.strip()]
+print(f"Generated query variants:")
+for v in variants:
+    print(f"  - {v}")
+
+# Step 2: run original + all variants, deduplicate results by content
+seen_keys: set = set()
+all_docs = []
+for q in [QUERY] + variants:
+    for doc in basic_retriever.invoke(q):
+        key = doc.page_content[:80]
+        if key not in seen_keys:
+            seen_keys.add(key)
+            all_docs.append(doc)
+
 print(f"\nOriginal query: '{QUERY}'")
-print(f"Retrieved {len(docs_retrieved)} docs after merging all query variants:")
-for doc in docs_retrieved[:3]:
+print(f"Retrieved {len(all_docs)} unique docs after merging all query variants:")
+for doc in all_docs[:3]:
     print(f"  page={doc.metadata.get('page')} | {doc.page_content[:120]}...")
-# The log output shows the 3 generated query variants before the results.
 # Notice the result count is usually higher than basic_retriever — more coverage.
+# The deduplication step ensures each chunk appears at most once even if multiple
+# query variants retrieve the same chunk.
 
 
-# ── 4. ContextualCompressionRetriever ─────────────────────────────────────────────
+# ── 4. Contextual Compression (extract relevant parts) ────────────────────────
 # Problem: retrieved chunks often contain a mix of relevant and irrelevant sentences.
 # A 500-character chunk about password policy might start with 3 relevant sentences
 # and end with 2 sentences about something completely different.
 #
-# Solution: after retrieval, pass each chunk through an LLM compressor that
-# extracts ONLY the sentences relevant to the query.
+# Solution: after retrieval, pass each chunk through an LLM that extracts ONLY
+# the sentences relevant to the query — discarding the rest.
 #
 # Pipeline:
-#   Query → basic_retriever → raw chunks → LLMChainExtractor → compressed chunks
+#   Query → basic_retriever → raw chunks → LLM extractor → compressed chunks
+#
+# This is implemented here with a direct LCEL chain so you can see the mechanics.
 #
 # Cost: 1 extra LLM call per retrieved chunk (to compress it).
 # Benefit: the LLM receives a tighter, more focused context — fewer tokens wasted.
 #
 # When to use: when chunk quality matters more than retrieval speed.
-print("\n=== 4. ContextualCompressionRetriever (extract relevant parts) ===")
-try:
-    from langchain.retrievers.contextual_compression import ContextualCompressionRetriever
-    from langchain.retrievers.document_compressors import LLMChainExtractor
-except ImportError:
-    from langchain_community.retrievers.contextual_compression import ContextualCompressionRetriever  # noqa: E402
-    from langchain_community.retrievers.document_compressors import LLMChainExtractor  # noqa: E402
+print("\n=== 4. Contextual Compression (extract relevant parts) ===")
+from langchain_core.documents import Document  # noqa: E402
 
-# LLMChainExtractor reads each chunk and returns only the relevant sentences.
-compressor = LLMChainExtractor.from_llm(llm)
-
-compression_retriever = ContextualCompressionRetriever(
-    base_compressor=compressor,   # the LLM that does the extraction
-    base_retriever=basic_retriever,  # the retriever that fetches raw chunks first
+extract_prompt = PromptTemplate.from_template(
+    "Given the document below and a question, extract ONLY the sentences that "
+    "directly help answer the question. If nothing is relevant, output exactly: IRRELEVANT\n\n"
+    "Question: {question}\n\nDocument:\n{document}\n\nRelevant extract:"
 )
-docs_retrieved = compression_retriever.invoke(QUERY)
-print(f"Retrieved {len(docs_retrieved)} compressed docs:")
-for doc in docs_retrieved:
+extract_chain = extract_prompt | llm | StrOutputParser()
+
+raw_docs = basic_retriever.invoke(QUERY)
+compressed_docs = []
+for doc in raw_docs:
+    extract = extract_chain.invoke({"question": QUERY, "document": doc.page_content})
+    if extract.strip().upper() != "IRRELEVANT":
+        compressed_docs.append(Document(page_content=extract.strip(), metadata=doc.metadata))
+
+print(f"Retrieved {len(compressed_docs)} compressed docs:")
+for doc in compressed_docs:
     print(f"  page={doc.metadata.get('page')} | {doc.page_content[:200]}...")
-# Each result should be shorter than the original 500-char chunk —
+# Each result is shorter than the original 500-char chunk —
 # only the sentences that directly answer the query are kept.
 
 
-# ── 5. SelfQueryRetriever ────────────────────────────────────────────────────────
+# ── 5. Metadata Filtering (self-query concept) ────────────────────────────────
 # Problem: basic search ignores metadata. You can't say "only search page 2"
 # or "only look at sections from the security chapter".
 #
-# Solution: the LLM parses your natural language query into TWO things:
+# Concept: parse the natural language query into TWO parts:
 #   a) Semantic query — the part to search by embedding similarity
 #   b) Metadata filter — structured conditions applied BEFORE the vector search
 #
@@ -194,48 +214,51 @@ for doc in docs_retrieved:
 #   → semantic query:  "software installation"
 #   → metadata filter: page == 2
 #
-# The vector search runs only on chunks that pass the filter — much more precise.
-#
-# Requires: a vector store that supports metadata filtering (Chroma, Pinecone, etc.)
-# FAISS does not support metadata filtering, so we use Chroma here.
-print("\n=== 5. SelfQueryRetriever (natural language → metadata filter) ===")
-from langchain.retrievers.self_query.base import SelfQueryRetriever  # noqa: E402
-from langchain.chains.query_constructor.base import AttributeInfo  # noqa: E402
+# Implemented here with a simple LLM-based parser + manual filter applied to
+# Chroma (which supports metadata filtering, unlike FAISS).
+print("\n=== 5. Metadata Filtering (self-query concept) ===")
+import json  # noqa: E402
+import re    # noqa: E402
 from langchain_community.vectorstores import Chroma  # noqa: E402
 
-# Tell the LLM what metadata fields exist so it can build the right filter.
-metadata_field_info = [
-    AttributeInfo(
-        name="page",
-        description="The page number in the policy PDF (integer, starts at 0)",
-        type="integer",
-    ),
-    AttributeInfo(
-        name="source",
-        description="The file path of the source PDF document",
-        type="string",
-    ),
-]
-
-# Build a Chroma store (supports metadata filtering, unlike FAISS)
 chroma_store = Chroma.from_documents(
     chunks, embeddings, collection_name="self_query_demo"
 )
 
-self_query_retriever = SelfQueryRetriever.from_llm(
-    llm=llm,
-    vectorstore=chroma_store,
-    document_contents="Company laptop usage policy sections",
-    metadata_field_info=metadata_field_info,
-    verbose=True,  # prints the parsed query + filter so you can see what the LLM generated
+# Ask the LLM to extract the page filter and semantic query from natural language.
+parse_prompt = PromptTemplate.from_template(
+    "Extract the page number filter and search query from this question.\n"
+    "Return valid JSON only, with keys 'page' (integer or null) and 'query' (string).\n\n"
+    "Question: {question}\n\nJSON:"
 )
+parse_chain = parse_prompt | llm | StrOutputParser()
 
-results = self_query_retriever.invoke("What does page 2 say about software installation?")
-print(f"\nRetrieved {len(results)} docs via self-query:")
+nl_query = "What does page 2 say about software installation?"
+parsed_raw = parse_chain.invoke({"question": nl_query})
+
+# Strip markdown code fences if the LLM wrapped the JSON
+parsed_raw = re.sub(r"```(?:json)?|```", "", parsed_raw).strip()
+parsed = json.loads(parsed_raw)
+semantic_query = parsed.get("query", nl_query)
+page_filter = parsed.get("page")
+
+print(f"Natural language: '{nl_query}'")
+print(f"  → semantic query: '{semantic_query}'")
+print(f"  → page filter:    {page_filter}")
+
+# Apply the metadata filter in Chroma then run similarity search
+if page_filter is not None:
+    results = chroma_store.similarity_search(
+        semantic_query, k=3, filter={"page": page_filter}
+    )
+else:
+    results = chroma_store.similarity_search(semantic_query, k=3)
+
+print(f"\nRetrieved {len(results)} docs via metadata-filtered search:")
 for doc in results[:2]:
     print(f"  page={doc.metadata.get('page')} | {doc.page_content[:120]}...")
-# Watch the verbose output — you'll see the LLM extract:
-#   query="software installation"  filter={"page": {"$eq": 2}}
+# All results should be from page 2 — the filter restricts the search space
+# BEFORE the vector similarity step runs.
 
 
 # ── Summary: when to use each retriever ────────────────────────────────────────
@@ -244,5 +267,5 @@ print("Basic          → default; fast; use when query phrasing is reliable")
 print("MMR            → use when basic returns redundant/repetitive chunks")
 print("MultiQuery     → use when the query could be phrased many different ways")
 print("Compression    → use when you need tight, precise context for the LLM")
-print("SelfQuery      → use when you need to filter by metadata (page, date, category)")
+print("Metadata filter→ use when you need to filter by metadata (page, date, category)")
 print("\n✅ Done. Next step (file 12): wire a retriever into a full RAG chain.")
