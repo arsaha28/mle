@@ -214,19 +214,37 @@ print("\nIntermediate summary (from research node):\n", result["summary"][:200],
 
 
 # ── Example 3: Inspect the graph structure ───────────────────────────────────────
-# After compile(), you can introspect the graph without any extra packages.
+# After compile(), you can introspect and visualise the graph.
+# print_ascii() draws the node/edge structure as text art (needs grandalf).
 # get_graph().nodes lists every registered node by name.
 # get_graph().edges lists every directed connection.
 print("\n" + "=" * 55)
 print("Example 3: Graph introspection")
 print("=" * 55)
 
+print("\nASCII diagram:")
+graph.get_graph().print_ascii()
+# Output:
+#   +-----------+
+#   | __start__ |
+#   +-----------+
+#         *
+#   +---------------+
+#   | write_outline |
+#   +---------------+
+#         *
+#   +---------------+
+#   | write_article |
+#   +---------------+
+#         *
+#   +---------+
+#   | __end__ |
+#   +---------+
+
 print("\nNodes:", list(graph.get_graph().nodes.keys()))
 print("Edges:", [(e.source, e.target) for e in graph.get_graph().edges])
-# Edges output: [('__start__', 'write_outline'), ('write_outline', 'write_article'),
-#                ('write_article', '__end__')]
-# Tip: install grandalf (`pip install grandalf`) to also call
-# graph.get_graph().print_ascii() for a text diagram of the graph.
+# Edges: [('__start__', 'write_outline'), ('write_outline', 'write_article'),
+#         ('write_article', '__end__')]
 
 
 # ── Summary ───────────────────────────────────────────────────────────────────
