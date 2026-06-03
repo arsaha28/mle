@@ -51,7 +51,7 @@ llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 parser = StrOutputParser()
 
 
-# ── Example 1: Minimal linear graph ──────────────────────────────────────────
+# ── Example 1: Minimal linear graph ────────────────────────────────────────────
 # The simplest possible LangGraph: two nodes connected in a straight line.
 #
 # Graph structure:
@@ -106,7 +106,7 @@ def write_article(state: SimpleState) -> dict:
     return {"article": article}
 
 
-# Build the graph ─────────────────────────────────────────────────────────────
+# Build the graph ───────────────────────────────────────────────────────────────────
 # Step 1: create a builder with the state schema
 builder = StateGraph(SimpleState)
 
@@ -134,7 +134,7 @@ print("\nOutline:\n", result["outline"])
 print("\nArticle:\n", result["article"])
 
 
-# ── Example 2: Three-node pipeline ───────────────────────────────────────────
+# ── Example 2: Three-node pipeline ─────────────────────────────────────────────
 # A longer linear pipeline showing how state accumulates across nodes.
 #
 # Graph structure:
@@ -213,40 +213,20 @@ print("\nFinal post:\n", result["improved"])
 print("\nIntermediate summary (from research node):\n", result["summary"][:200], "...")
 
 
-# ── Example 3: Inspect the graph structure ───────────────────────────────────
-# After compile(), you can visualise and introspect the graph.
-# This is useful for debugging — especially in larger graphs with branches.
-#
-# get_graph().print_ascii() draws the node/edge structure as text art.
+# ── Example 3: Inspect the graph structure ───────────────────────────────────────
+# After compile(), you can introspect the graph without any extra packages.
 # get_graph().nodes lists every registered node by name.
 # get_graph().edges lists every directed connection.
 print("\n" + "=" * 55)
 print("Example 3: Graph introspection")
 print("=" * 55)
 
-print("\nASCII diagram of Example 1 graph:")
-graph.get_graph().print_ascii()
-# Output shows:
-#   +-----------+
-#   | __start__ |
-#   +-----------+
-#         |
-#   +---------------+
-#   | write_outline |
-#   +---------------+
-#         |
-#   +--------------+
-#   | write_article|
-#   +--------------+
-#         |
-#   +---------+
-#   | __end__ |
-#   +---------+
-
 print("\nNodes:", list(graph.get_graph().nodes.keys()))
 print("Edges:", [(e.source, e.target) for e in graph.get_graph().edges])
 # Edges output: [('__start__', 'write_outline'), ('write_outline', 'write_article'),
 #                ('write_article', '__end__')]
+# Tip: install grandalf (`pip install grandalf`) to also call
+# graph.get_graph().print_ascii() for a text diagram of the graph.
 
 
 # ── Summary ───────────────────────────────────────────────────────────────────
