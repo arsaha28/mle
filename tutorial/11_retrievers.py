@@ -40,7 +40,7 @@ load_dotenv()
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
 PDF_PATH = os.path.join(DATA_DIR, "laptop_policy.pdf")
 
-# ── Shared setup ───────────────────────────────────────────────────────────────────────────
+# ── Shared setup ────────────────────────────────────────────────────────────────
 # Build one FAISS vector store and reuse it across all retriever examples.
 # This avoids re-embedding the same document multiple times.
 print("Building vector store...")
@@ -56,7 +56,7 @@ llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 QUERY = "What security measures are required for remote workers?"
 
 
-# ── 1. Basic VectorStoreRetriever ──────────────────────────────────────────────────────────
+# ── 1. Basic VectorStoreRetriever ─────────────────────────────────────────────
 # The simplest retriever — embeds the query and returns the k most similar chunks.
 # No LLM involved; just vector maths. Fast and cheap.
 #
@@ -75,7 +75,7 @@ for doc in docs_retrieved:
 # That's wasted context — the LLM sees duplicate information.
 
 
-# ── 2. MMR Retriever ──────────────────────────────────────────────────────────────────────
+# ── 2. MMR Retriever ─────────────────────────────────────────────────────────────
 # MMR = Maximum Marginal Relevance.
 # Instead of returning the k most similar chunks, it iteratively selects chunks
 # that are BOTH relevant to the query AND different from already-selected chunks.
@@ -109,7 +109,7 @@ for doc in docs_retrieved:
 # of the topic rather than repeating the same point from different angles.
 
 
-# ── 3. MultiQueryRetriever ────────────────────────────────────────────────────────────────────
+# ── 3. MultiQueryRetriever ───────────────────────────────────────────────────────
 # Problem: a single query phrasing might miss relevant chunks that use
 # different vocabulary. "remote work security" won't find a chunk that says
 # "off-site device protection" even if it's highly relevant.
@@ -122,7 +122,7 @@ for doc in docs_retrieved:
 #
 # When to use: when your query is ambiguous or could be phrased many ways.
 print("\n=== 3. MultiQueryRetriever (query expansion) ===")
-from langchain.retrievers import MultiQueryRetriever  # noqa: E402
+from langchain.retrievers.multi_query import MultiQueryRetriever  # noqa: E402
 import logging  # noqa: E402
 
 # Enable logging to see the generated query variants in the output
@@ -141,7 +141,7 @@ for doc in docs_retrieved[:3]:
 # Notice the result count is usually higher than basic_retriever — more coverage.
 
 
-# ── 4. ContextualCompressionRetriever ────────────────────────────────────────────────────
+# ── 4. ContextualCompressionRetriever ─────────────────────────────────────────────
 # Problem: retrieved chunks often contain a mix of relevant and irrelevant sentences.
 # A 500-character chunk about password policy might start with 3 relevant sentences
 # and end with 2 sentences about something completely different.
@@ -157,14 +157,14 @@ for doc in docs_retrieved[:3]:
 #
 # When to use: when chunk quality matters more than retrieval speed.
 print("\n=== 4. ContextualCompressionRetriever (extract relevant parts) ===")
-from langchain.retrievers import ContextualCompressionRetriever  # noqa: E402
+from langchain.retrievers.contextual_compression import ContextualCompressionRetriever  # noqa: E402
 from langchain.retrievers.document_compressors import LLMChainExtractor  # noqa: E402
 
 # LLMChainExtractor reads each chunk and returns only the relevant sentences.
 compressor = LLMChainExtractor.from_llm(llm)
 
 compression_retriever = ContextualCompressionRetriever(
-    base_compressor=compressor,      # the LLM that does the extraction
+    base_compressor=compressor,   # the LLM that does the extraction
     base_retriever=basic_retriever,  # the retriever that fetches raw chunks first
 )
 docs_retrieved = compression_retriever.invoke(QUERY)
@@ -175,7 +175,7 @@ for doc in docs_retrieved:
 # only the sentences that directly answer the query are kept.
 
 
-# ── 5. SelfQueryRetriever ───────────────────────────────────────────────────────────────────────
+# ── 5. SelfQueryRetriever ────────────────────────────────────────────────────────
 # Problem: basic search ignores metadata. You can't say "only search page 2"
 # or "only look at sections from the security chapter".
 #
@@ -231,7 +231,7 @@ for doc in results[:2]:
 #   query="software installation"  filter={"page": {"$eq": 2}}
 
 
-# ── Summary: when to use each retriever ────────────────────────────────────────────────
+# ── Summary: when to use each retriever ────────────────────────────────────────
 print("\n--- Retriever decision guide ---")
 print("Basic          → default; fast; use when query phrasing is reliable")
 print("MMR            → use when basic returns redundant/repetitive chunks")
