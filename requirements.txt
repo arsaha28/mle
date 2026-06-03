@@ -11,3 +11,4 @@ python-dotenv>=1.0.0
 tiktoken>=0.7.0
 unstructured>=0.14.0
 reportlab>=4.0.0
+grandalf>=0.6
